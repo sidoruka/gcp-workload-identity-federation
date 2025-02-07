@@ -55,7 +55,7 @@ class Utils: #pylint: disable=too-many-instance-attributes,too-few-public-method
         # STS url for GetCallerIdentity
         self.url = 'https://sts.amazonaws.com?Action=GetCallerIdentity&Version=2011-06-15'
 
-def _assume_role(self) -> Tuple[str, str, str]:
+    def _assume_role(self) -> Tuple[str, str, str]:
         """
         Assumes the AWS IAM role used for federation
 
