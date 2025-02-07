@@ -55,7 +55,7 @@ class Utils: #pylint: disable=too-many-instance-attributes,too-few-public-method
         # STS url for GetCallerIdentity
         self.url = 'https://sts.amazonaws.com?Action=GetCallerIdentity&Version=2011-06-15'
 
-    def _assume_role(self) -> Tuple[str, str, str]:
+def _assume_role(self) -> Tuple[str, str, str]:
         """
         Assumes the AWS IAM role used for federation
 
@@ -65,32 +65,18 @@ class Utils: #pylint: disable=too-many-instance-attributes,too-few-public-method
             aws_session_token: str - AWS session token from the assumed IAM role
         """
 
-        # Assume AWS IAM role
         try:
-            logger.info("Assuming AWS IAM Role.")
-            assumed_role_object: dict = self.sts_client.assume_role(
-                RoleArn=f"arn:aws:iam::{self.aws_account_id}:role/{self.aws_role_name}",
-                RoleSessionName=self.aws_role_name
-            )
+            logger.info("Getting role credentials")
+            session = boto3.Session()
+            credentials = session.get_credentials()
+            credentials = credentials.get_frozen_credentials()
+            aws_access_key = credentials.access_key
+            aws_secret_access_key = credentials.secret_key
+            aws_session_token = credentials.token
         except exceptions.ClientError as err:
             raise err
         except exceptions.ParamValidationError as err:
             raise ValueError(f'The parameters you provided are incorrect: {err}') #pylint: disable=raise-missing-from
-
-        # Capture temporary credentials
-        try:
-            credentials: dict = assumed_role_object['Credentials']
-
-            # Create our temporay credentials to use in our SigV4
-            # Caller Identity Token signing process
-            aws_access_key: str = credentials['AccessKeyId']
-            aws_secret_access_key: str = credentials['SecretAccessKey']
-            aws_session_token: str = credentials['SessionToken']
-
-        except KeyError as err:
-            logger.error("Something went wrong getting AssumeRole credentials")
-            raise err
-
         return aws_access_key, aws_secret_access_key, aws_session_token
 
     def _signed_request(self, data=None, params=None, headers=None, credentials=None) -> str:
